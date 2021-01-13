@@ -3,4 +3,6 @@ https://stackoverflow.com/questions/6925756/how-to-draw-image-frame-for-camera-v
 https://stackoverflow.com/questions/4863518/combining-two-bitmap-image-side-by-side
 https://stackoverflow.com/questions/10616777/how-to-merge-to-two-bitmap-one-over-another
 https://stackoverflow.com/questions/11737607/how-to-set-the-image-from-drawable-dynamically-in-android
+https://stackoverflow.com/questions/6042977/android-set-custom-font-to-a-paint
+https://stackoverflow.com/questions/7320392/how-to-draw-text-on-image
 
