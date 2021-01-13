@@ -53,8 +53,9 @@ fun concatDrawable(originalBitmap: Bitmap, context: Context): Bitmap {
 
     val solidPurpleBitmap = generateSolidBitmap(context, width, 72 * scale.toInt())!!
     val apnaIcon = addApnaIcon(resources, solidPurpleBitmap)!!
+    val withPlayStoreIcon = addPlayStoreIcon(resources, apnaIcon)!!
     val tpImg = drawTextToBitmap(
-        context, apnaIcon, "Get the best jobs\n" +
+        context, withPlayStoreIcon, "Get the best jobs\n" +
                 "and advice on the apna app"
     )!!
 
@@ -93,6 +94,29 @@ fun addApnaIcon(resources: Resources, bitmap: Bitmap): Bitmap? {
     comboImage.drawBitmap(bitmap, 0f, 0f, null)
     val marginLogo = 16 * scale
     comboImage.drawBitmap(topImage, marginLogo, marginLogo, null)
+    return b
+}
+
+fun addPlayStoreIcon(resources: Resources, bitmap: Bitmap): Bitmap? {
+    val scale = resources.displayMetrics.density
+
+    val playStoreDrawable: Drawable = resources.getDrawable(R.drawable.badge_copy)
+    val playStoreBitmap = (playStoreDrawable as BitmapDrawable?)!!.bitmap
+
+    val b = Bitmap.createBitmap(
+        bitmap.width,
+        bitmap.height,
+        bitmap.config
+    )
+    val comboImage = Canvas(b)
+
+    val height = bitmap.height - 2 * 22 * scale
+    val width = playStoreBitmap.width * height / playStoreBitmap.height
+    val topImage = Bitmap.createScaledBitmap(playStoreBitmap, width.toInt(), height.toInt(), true)
+
+    comboImage.drawBitmap(bitmap, 0f, 0f, null)
+    val marginLogo = 16 * scale
+    comboImage.drawBitmap(topImage, bitmap.width - marginLogo - width, 22 * scale, null)
     return b
 }
 
