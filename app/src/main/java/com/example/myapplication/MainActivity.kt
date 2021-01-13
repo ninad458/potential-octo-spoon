@@ -3,6 +3,8 @@ package com.example.myapplication
 import android.content.Context
 import android.content.res.Resources
 import android.graphics.*
+import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.view.View
 import android.widget.ImageView
@@ -49,11 +51,12 @@ fun concatDrawable(originalBitmap: Bitmap, context: Context): Bitmap {
     val width: Int = originalBitmap.width
     val height: Int = originalBitmap.height
 
+    val solidPurpleBitmap = generateSolidBitmap(context, width, 72 * scale.toInt())!!
+    val apnaIcon = addApnaIcon(resources, solidPurpleBitmap)!!
     val tpImg = drawTextToBitmap(
-        context, generateSolidBitmap(context, width, 72 * scale.toInt())!!, "Get the best jobs\n" +
+        context, apnaIcon, "Get the best jobs\n" +
                 "and advice on the apna app"
     )!!
-
 
     val ratio = width / tpImg.width
 
@@ -68,6 +71,28 @@ fun concatDrawable(originalBitmap: Bitmap, context: Context): Bitmap {
 
     comboImage.drawBitmap(originalBitmap, 0f, 0f, null)
     comboImage.drawBitmap(topImage, 0f, originalBitmap.height.toFloat(), null)
+    return b
+}
+
+fun addApnaIcon(resources: Resources, bitmap: Bitmap): Bitmap? {
+    val scale = resources.displayMetrics.density
+
+    val logoDrawable: Drawable = resources.getDrawable(R.drawable.ic_logo)
+    val logoBitmap = (logoDrawable as BitmapDrawable?)!!.bitmap
+
+    val b = Bitmap.createBitmap(
+        bitmap.width,
+        bitmap.height,
+        bitmap.config
+    )
+    val comboImage = Canvas(b)
+
+    val logoSize = 40 * scale.toInt()
+    val topImage = Bitmap.createScaledBitmap(logoBitmap, logoSize, logoSize, true)
+
+    comboImage.drawBitmap(bitmap, 0f, 0f, null)
+    val marginLogo = 16 * scale
+    comboImage.drawBitmap(topImage, marginLogo, marginLogo, null)
     return b
 }
 
