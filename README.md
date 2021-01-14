@@ -11,3 +11,4 @@ https://stackoverflow.com/questions/6042977/android-set-custom-font-to-a-paint
 
 https://stackoverflow.com/questions/7320392/how-to-draw-text-on-image
 
+https://stackoverflow.com/a/32081250/5078763
