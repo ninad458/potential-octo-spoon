@@ -11,6 +11,7 @@ import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
+import androidx.core.graphics.drawable.toBitmap
 
 
 class MainActivity : AppCompatActivity() {
@@ -51,8 +52,7 @@ fun concatDrawable(originalBitmap: Bitmap, context: Context): Bitmap {
     val width: Int = originalBitmap.width
     val height: Int = originalBitmap.height
 
-    val solidPurpleBitmap = generateSolidBitmap(context, width, 72 * scale.toInt())!!
-    val apnaIcon = addApnaIcon(resources, solidPurpleBitmap)!!
+    val apnaIcon = addApnaIcon(resources, originalBitmap)!!
     val withPlayStoreIcon = addPlayStoreIcon(resources, apnaIcon)!!
     val tpImg = drawTextToBitmap(
         context, withPlayStoreIcon, "Get the best jobs\n" +
@@ -78,22 +78,37 @@ fun concatDrawable(originalBitmap: Bitmap, context: Context): Bitmap {
 fun addApnaIcon(resources: Resources, bitmap: Bitmap): Bitmap? {
     val scale = resources.displayMetrics.density
 
-    val logoDrawable: Drawable = resources.getDrawable(R.drawable.ic_logo)
-    val logoBitmap = (logoDrawable as BitmapDrawable?)!!.bitmap
+    val bannerHeight = 72 * scale.toInt()
 
-    val b = Bitmap.createBitmap(
-        bitmap.width,
-        bitmap.height,
-        bitmap.config
-    )
+    val logoDrawable: Drawable = resources.getDrawable(R.drawable.ic_logo)
+
+    val b = Bitmap.createBitmap(bitmap.width, bannerHeight, bitmap.config)
+
     val comboImage = Canvas(b)
 
-    val logoSize = 40 * scale.toInt()
-    val topImage = Bitmap.createScaledBitmap(logoBitmap, logoSize, logoSize, true)
+    comboImage.drawRect(Rect(0, 0, b.width, b.height), Paint().apply {
+        isAntiAlias = true
+        color = Color.RED
+        style = Paint.Style.FILL
+    })
 
-    comboImage.drawBitmap(bitmap, 0f, 0f, null)
-    val marginLogo = 16 * scale
-    comboImage.drawBitmap(topImage, marginLogo, marginLogo, null)
+
+    val marginLogo = 16 * scale.toInt()
+
+    val ratio = logoDrawable.intrinsicWidth / logoDrawable.intrinsicHeight
+
+    val expectedHeight = comboImage.height - (marginLogo * 2)
+
+    val expectedWidth = expectedHeight * ratio
+
+    val rect = Rect(0, 0, expectedWidth, expectedHeight).apply {
+        offset(marginLogo, marginLogo)
+    }
+
+    logoDrawable.bounds = rect
+
+    logoDrawable.draw(comboImage)
+
     return b
 }
 
