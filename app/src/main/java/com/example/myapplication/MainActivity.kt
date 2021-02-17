@@ -88,12 +88,24 @@ fun addApnaIcon(resources: Resources, bitmap: Bitmap): Bitmap? {
     )
     val comboImage = Canvas(b)
 
-    val logoSize = 40 * scale.toInt()
+    val logoSize = (b.height / 1.8).toInt()
+    val marginLogo = (bitmap.height - logoSize) / 2f
     val topImage = Bitmap.createScaledBitmap(logoBitmap, logoSize, logoSize, true)
 
     comboImage.drawBitmap(bitmap, 0f, 0f, null)
-    val marginLogo = 16 * scale
-    comboImage.drawBitmap(topImage, marginLogo, marginLogo, null)
+
+    val source = Rect(0, 0, topImage.width, topImage.height)
+
+    val dest =
+        RectF(0f, 0f, source.width().toFloat(), source.height().toFloat())
+    dest.offset(marginLogo, marginLogo)
+
+    comboImage.drawBitmap(
+        topImage,
+        source,
+        dest,
+        null
+    )
     return b
 }
 
