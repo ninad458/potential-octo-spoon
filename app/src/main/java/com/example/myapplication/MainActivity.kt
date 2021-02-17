@@ -11,6 +11,7 @@ import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
+import androidx.core.graphics.drawable.toBitmap
 
 
 class MainActivity : AppCompatActivity() {
@@ -79,7 +80,7 @@ fun addApnaIcon(resources: Resources, bitmap: Bitmap): Bitmap? {
     val scale = resources.displayMetrics.density
 
     val logoDrawable: Drawable = resources.getDrawable(R.drawable.ic_logo)
-    val logoBitmap = (logoDrawable as BitmapDrawable?)!!.bitmap
+    val logoBitmap = logoDrawable.toBitmap()
 
     val b = Bitmap.createBitmap(
         bitmap.width,
@@ -94,15 +95,13 @@ fun addApnaIcon(resources: Resources, bitmap: Bitmap): Bitmap? {
 
     comboImage.drawBitmap(bitmap, 0f, 0f, null)
 
-    val source = Rect(0, 0, topImage.width, topImage.height)
-
     val dest =
-        RectF(0f, 0f, source.width().toFloat(), source.height().toFloat())
+        RectF(0f, 0f, topImage.width.toFloat(), topImage.height.toFloat())
     dest.offset(marginLogo, marginLogo)
 
     comboImage.drawBitmap(
         topImage,
-        source,
+        null,
         dest,
         null
     )
