@@ -3,7 +3,6 @@ package com.example.myapplication
 import android.content.Context
 import android.content.res.Resources
 import android.graphics.*
-import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.view.View
@@ -55,8 +54,8 @@ fun concatDrawable(originalBitmap: Bitmap, context: Context): Bitmap {
     val apnaIcon = addApnaIcon(resources, originalBitmap)!!
     val withPlayStoreIcon = addPlayStoreIcon(resources, apnaIcon)!!
     val tpImg = drawTextToBitmap(
-        context, withPlayStoreIcon, "Get the best jobs\n" +
-                "and advice on the apna app"
+        context, withPlayStoreIcon, "Get the best jobs and\n" +
+                "advice on the apna app"
     )!!
 
     val ratio = width / tpImg.width
@@ -116,7 +115,7 @@ fun addPlayStoreIcon(resources: Resources, bitmap: Bitmap): Bitmap? {
     val scale = resources.displayMetrics.density
 
     val playStoreDrawable: Drawable = resources.getDrawable(R.drawable.badge_copy)
-    val playStoreBitmap = (playStoreDrawable as BitmapDrawable?)!!.bitmap
+    val playStoreBitmap = playStoreDrawable.toBitmap()
 
     val b = Bitmap.createBitmap(
         bitmap.width,
@@ -125,13 +124,23 @@ fun addPlayStoreIcon(resources: Resources, bitmap: Bitmap): Bitmap? {
     )
     val comboImage = Canvas(b)
 
-    val height = bitmap.height - 2 * 22 * scale
+    val height = bitmap.height / 1.8f
     val width = playStoreBitmap.width * height / playStoreBitmap.height
     val topImage = Bitmap.createScaledBitmap(playStoreBitmap, width.toInt(), height.toInt(), true)
 
     comboImage.drawBitmap(bitmap, 0f, 0f, null)
-    val marginLogo = 16 * scale
-    comboImage.drawBitmap(topImage, bitmap.width - marginLogo - width, 22 * scale, null)
+    val marginLogo = 8 * scale
+
+    val dest =
+        RectF(
+            bitmap.width - marginLogo - width,
+            bitmap.height / 4f,
+            bitmap.width - marginLogo,
+            bitmap.height / 4f + height
+        )
+//    dest.offset(-marginLogo, -marginLogo)
+
+    comboImage.drawBitmap(topImage, null, dest, null)
     return b
 }
 
@@ -153,8 +162,21 @@ fun drawTextToBitmap(context: Context, bitmap: Bitmap, text: String): Bitmap? {
         paint.getTextBounds(text, 0, multiLinedTexts[0].length, bounds)
         val x = 72 * scale
         val y = (copyBitmap.height - bounds.height()) / 2f
-        canvas.drawText(multiLinedTexts[0], x, y, paint)
-        canvas.drawText(multiLinedTexts[1], x, y + paint.descent() - paint.ascent(), paint)
+        val textHeight: Float = paint.descent() - paint.ascent()
+        val textOffset: Float = textHeight / 2 - paint.descent()
+
+        canvas.drawText(
+            multiLinedTexts[0],
+            x,
+            copyBitmap.height / 2 + textOffset - (textHeight / 2),
+            paint
+        )
+        canvas.drawText(
+            multiLinedTexts[1],
+            x,
+            copyBitmap.height / 2 + textOffset + (textHeight / 2),
+            paint
+        )
         copyBitmap
     } catch (e: Exception) {
         e.printStackTrace()
