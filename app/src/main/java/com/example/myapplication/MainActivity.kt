@@ -5,6 +5,9 @@ import android.content.res.Resources
 import android.graphics.*
 import android.graphics.drawable.Drawable
 import android.os.Bundle
+import android.text.Layout
+import android.text.StaticLayout
+import android.text.TextPaint
 import android.view.View
 import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
@@ -54,8 +57,7 @@ fun concatDrawable(originalBitmap: Bitmap, context: Context): Bitmap {
     val apnaIcon = addApnaIcon(resources, originalBitmap)!!
     val withPlayStoreIcon = addPlayStoreIcon(resources, apnaIcon)!!
     val tpImg = drawTextToBitmap(
-        context, withPlayStoreIcon, "Get the best jobs and\n" +
-                "advice on the apna app"
+        context, withPlayStoreIcon, "Get the best jobs and advice on the apna app"
     )!!
 
     val ratio = width / tpImg.width
@@ -150,33 +152,28 @@ fun drawTextToBitmap(context: Context, bitmap: Bitmap, text: String): Bitmap? {
         val scale: Float = resources.displayMetrics.density
         val bitmapConfig = bitmap.config ?: Bitmap.Config.ARGB_8888
 
+        val textWidth: Int = bitmap.width - (250 * scale).toInt()
+
         val copyBitmap = bitmap.copy(bitmapConfig, true)
         val canvas = Canvas(copyBitmap)
-        val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+        val paint = TextPaint(Paint.ANTI_ALIAS_FLAG)
         val plain = ResourcesCompat.getFont(context, R.font.firasans_bold) ?: return null
         paint.color = Color.rgb(255, 255, 255)
         paint.textSize = 12 * scale
         paint.typeface = plain
-        val bounds = Rect()
-        val multiLinedTexts = text.split("\n")
-        paint.getTextBounds(text, 0, multiLinedTexts[0].length, bounds)
-        val x = 72 * scale
-        val y = (copyBitmap.height - bounds.height()) / 2f
-        val textHeight: Float = paint.descent() - paint.ascent()
-        val textOffset: Float = textHeight / 2 - paint.descent()
+        val textLayout = StaticLayout(
+            text, paint, textWidth, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false
+        )
 
-        canvas.drawText(
-            multiLinedTexts[0],
-            x,
-            copyBitmap.height / 2 + textOffset - (textHeight / 2),
-            paint
-        )
-        canvas.drawText(
-            multiLinedTexts[1],
-            x,
-            copyBitmap.height / 2 + textOffset + (textHeight / 2),
-            paint
-        )
+        val textHeight = textLayout.height
+
+        val x: Float = (bitmap.width - textWidth) / 2f - 20 * scale
+        val y: Float = (bitmap.height - textHeight) / 2f
+
+        canvas.save()
+        canvas.translate(x, y)
+        textLayout.draw(canvas)
+        canvas.restore()
         copyBitmap
     } catch (e: Exception) {
         e.printStackTrace()
