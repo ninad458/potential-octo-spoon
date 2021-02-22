@@ -170,10 +170,10 @@ fun drawTextToBitmap(context: Context, bitmap: Bitmap, text: String): Bitmap? {
         val x: Float = (bitmap.width - textWidth) / 2f - 20 * scale
         val y: Float = (bitmap.height - textHeight) / 2f
 
-        canvas.save()
+        val savePoint = canvas.save()
         canvas.translate(x, y)
         textLayout.draw(canvas)
-        canvas.restore()
+        canvas.restoreToCount(savePoint)
         copyBitmap
     } catch (e: Exception) {
         e.printStackTrace()
