@@ -1,7 +1,6 @@
 package com.example.myapplication
 
 import android.content.Context
-import android.content.res.Resources
 import android.graphics.*
 import android.graphics.drawable.Drawable
 import android.os.Bundle
@@ -23,18 +22,11 @@ class MainActivity : AppCompatActivity() {
         val copyImage = findViewById<ImageView>(R.id.copy)
 
         view.post {
-            val concatDrawable = concatDrawable(loadBitmapFromView(view), this)
+            val concatDrawable = this.generatePoweredByImage(loadBitmapFromView(view))
             copyImage.setImageBitmap(concatDrawable)
             view.visibility = View.GONE
         }
     }
-}
-
-fun generateSolidBitmap(context: Context, width: Int, height: Int): Bitmap? {
-    val image = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-    val canvas = Canvas(image)
-    canvas.drawColor(ContextCompat.getColor(context, R.color.colorPrimary))
-    return image
 }
 
 fun loadBitmapFromView(v: View): Bitmap {
@@ -44,15 +36,12 @@ fun loadBitmapFromView(v: View): Bitmap {
     return b
 }
 
-fun concatDrawable(originalBitmap: Bitmap, context: Context): Bitmap {
-    val resources = context.resources
-
-    val scale: Float = resources.displayMetrics.density
-
-    val bannerHeight = 72 * scale.toInt()
+fun Context.generatePoweredByImage(originalBitmap: Bitmap): Bitmap {
+    val scale = 1 / 7f
+    val bannerHeight = originalBitmap.width * scale
     val destBitmap = Bitmap.createBitmap(
         originalBitmap.width,
-        originalBitmap.height + bannerHeight,
+        (originalBitmap.height + bannerHeight).toInt(),
         originalBitmap.config
     )
     val canvas = Canvas(destBitmap)
@@ -62,10 +51,10 @@ fun concatDrawable(originalBitmap: Bitmap, context: Context): Bitmap {
             0,
             originalBitmap.height,
             originalBitmap.width,
-            originalBitmap.height + bannerHeight
+            (originalBitmap.height + bannerHeight).toInt()
         ), Paint().apply {
             isAntiAlias = true
-            color = Color.GRAY
+            color = ContextCompat.getColor(this@generatePoweredByImage, R.color.colorPrimary)
             style = Paint.Style.FILL
         })
 
@@ -76,26 +65,40 @@ fun concatDrawable(originalBitmap: Bitmap, context: Context): Bitmap {
         Paint()
     )
 
-    val logoDrawable: Drawable = resources.getDrawable(R.drawable.ic_logo)
-    val apnaIconRect = getApnaIconRect(logoDrawable, bannerHeight)
+    val logoDrawable: Drawable =
+        ContextCompat.getDrawable(this, R.drawable.ic_logo)
+            ?: throw Exception("Unable to fetch the drawable ic_logo")
+    val apnaIconRect = getApnaIconRect(logoDrawable, bannerHeight.toInt())
     apnaIconRect.offset(0, originalBitmap.height)
     logoDrawable.bounds = apnaIconRect
     logoDrawable.draw(canvas)
 
 
-    val playStoreDrawable: Drawable = resources.getDrawable(R.drawable.badge_copy)
-    val playstoreRect = getPlaystoreRect(playStoreDrawable, bannerHeight, originalBitmap.width)
-    playstoreRect.offset(0, originalBitmap.height)
-    playStoreDrawable.bounds = playstoreRect
+    val playStoreDrawable: Drawable =
+        ContextCompat.getDrawable(this, R.drawable.badge_copy)
+            ?: throw Exception("Unable to fetch the drawable badge_copy")
+
+    val playStoreRect =
+        getPlaystoreRect(playStoreDrawable, bannerHeight.toInt(), originalBitmap.width)
+    playStoreRect.offset(0, originalBitmap.height)
+    playStoreDrawable.bounds = playStoreRect
     playStoreDrawable.draw(canvas)
 
-    val textLeft = apnaIconRect.right + 40 * scale
-    val textRight = playstoreRect.left - 40 * scale
+    val ratio =
+        (originalBitmap.width - (apnaIconRect.width() + playStoreRect.width())) / originalBitmap.width.toFloat()
+
+    val textLeft = apnaIconRect.right + 40 / ratio
+    val textRight = playStoreRect.left - 40 / ratio
 
     val textWidth = textRight - textLeft
 
     val textLayout =
-        drawTextToBitmap(context, "Get the best jobs and advice on the apna app", textWidth.toInt())
+        drawTextToBitmap(
+            this,
+            "Get the best jobs and advice on the apna app",
+            textWidth.toInt(),
+            ratio
+        )
 
     val textHeight = textLayout.height
     val textY: Float = (bannerHeight - textHeight) / 2f
@@ -110,7 +113,7 @@ fun concatDrawable(originalBitmap: Bitmap, context: Context): Bitmap {
 fun getApnaIconRect(logoDrawable: Drawable, height: Int): Rect {
     val ratio = logoDrawable.intrinsicWidth / logoDrawable.intrinsicHeight
 
-    val margin = height / 4
+    val margin = height / 5
     val expectedHeight = height - 2 * margin
 
     val expectedWidth = expectedHeight * ratio
@@ -121,28 +124,25 @@ fun getApnaIconRect(logoDrawable: Drawable, height: Int): Rect {
 }
 
 fun getPlaystoreRect(playStoreBitmap: Drawable, height: Int, width: Int): Rect {
-    val expectedHeight = height / 1.8f
+    val marginLogo = height / 6
+    val expectedHeight = height - marginLogo * 2
 
     val expectedWidth =
         playStoreBitmap.intrinsicWidth * expectedHeight / playStoreBitmap.intrinsicHeight
 
-    val marginLogo = height / 4f
-
     return Rect(
-        (width - marginLogo - expectedWidth).toInt(),
-        marginLogo.toInt(),
-        (width - marginLogo).toInt(),
-        (marginLogo + expectedHeight).toInt()
+        width - marginLogo - expectedWidth,
+        marginLogo,
+        width - marginLogo,
+        marginLogo + expectedHeight
     )
 }
 
-fun drawTextToBitmap(context: Context, text: String, width: Int): StaticLayout {
-    val resources: Resources = context.resources
-    val scale: Float = resources.displayMetrics.density
+fun drawTextToBitmap(context: Context, text: String, width: Int, ratio: Float): StaticLayout {
     val paint = TextPaint(Paint.ANTI_ALIAS_FLAG)
     val plain = ResourcesCompat.getFont(context, R.font.firasans_bold)
     paint.color = Color.rgb(255, 255, 255)
-    paint.textSize = 30 * scale
+    paint.textSize = 22 / ratio
     paint.typeface = plain
     return StaticLayout(
         text, paint, width, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false
