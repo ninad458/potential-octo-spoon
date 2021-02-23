@@ -13,7 +13,6 @@ import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
-import androidx.core.graphics.drawable.toBitmap
 
 
 class MainActivity : AppCompatActivity() {
@@ -26,6 +25,7 @@ class MainActivity : AppCompatActivity() {
         view.post {
             val concatDrawable = concatDrawable(loadBitmapFromView(view), this)
             copyImage.setImageBitmap(concatDrawable)
+            view.visibility = View.GONE
         }
     }
 }
@@ -44,139 +44,107 @@ fun loadBitmapFromView(v: View): Bitmap {
     return b
 }
 
-private const val TAG = "MainActivity"
-
 fun concatDrawable(originalBitmap: Bitmap, context: Context): Bitmap {
     val resources = context.resources
 
     val scale: Float = resources.displayMetrics.density
 
-    val width: Int = originalBitmap.width
-    val height: Int = originalBitmap.height
-
-    val apnaIcon = addApnaIcon(resources, originalBitmap)!!
-    val withPlayStoreIcon = addPlayStoreIcon(resources, apnaIcon)!!
-    val tpImg = drawTextToBitmap(
-        context, withPlayStoreIcon, "Get the best jobs and advice on the apna app"
-    )!!
-
-    val ratio = width / tpImg.width
-
-    val b = Bitmap.createBitmap(
+    val bannerHeight = 72 * scale.toInt()
+    val destBitmap = Bitmap.createBitmap(
         originalBitmap.width,
-        originalBitmap.height + tpImg.height * ratio,
+        originalBitmap.height + bannerHeight,
         originalBitmap.config
     )
-    val comboImage = Canvas(b)
+    val canvas = Canvas(destBitmap)
 
-    val topImage = Bitmap.createScaledBitmap(tpImg, width, tpImg.height * ratio, true)
+    canvas.drawRect(
+        Rect(
+            0,
+            originalBitmap.height,
+            originalBitmap.width,
+            originalBitmap.height + bannerHeight
+        ), Paint().apply {
+            isAntiAlias = true
+            color = Color.GRAY
+            style = Paint.Style.FILL
+        })
 
-    comboImage.drawBitmap(originalBitmap, 0f, 0f, null)
-    comboImage.drawBitmap(topImage, 0f, originalBitmap.height.toFloat(), null)
-    return b
-}
-
-fun addApnaIcon(resources: Resources, bitmap: Bitmap): Bitmap? {
-    val scale = resources.displayMetrics.density
-
-    val bannerHeight = 72 * scale.toInt()
+    canvas.drawBitmap(
+        originalBitmap,
+        null,
+        Rect(0, 0, originalBitmap.width, originalBitmap.height),
+        Paint()
+    )
 
     val logoDrawable: Drawable = resources.getDrawable(R.drawable.ic_logo)
-
-    val b = Bitmap.createBitmap(bitmap.width, bannerHeight, bitmap.config)
-
-    val comboImage = Canvas(b)
-
-    comboImage.drawRect(Rect(0, 0, b.width, b.height), Paint().apply {
-        isAntiAlias = true
-        color = Color.RED
-        style = Paint.Style.FILL
-    })
+    val apnaIconRect = getApnaIconRect(logoDrawable, bannerHeight)
+    apnaIconRect.offset(0, originalBitmap.height)
+    logoDrawable.bounds = apnaIconRect
+    logoDrawable.draw(canvas)
 
 
-    val marginLogo = 16 * scale.toInt()
+    val playStoreDrawable: Drawable = resources.getDrawable(R.drawable.badge_copy)
+    val playstoreRect = getPlaystoreRect(playStoreDrawable, bannerHeight, originalBitmap.width)
+    playstoreRect.offset(0, originalBitmap.height)
+    playStoreDrawable.bounds = playstoreRect
+    playStoreDrawable.draw(canvas)
 
+    val textLeft = apnaIconRect.right + 40 * scale
+    val textRight = playstoreRect.left - 40 * scale
+
+    val textWidth = textRight - textLeft
+
+    val textLayout =
+        drawTextToBitmap(context, "Get the best jobs and advice on the apna app", textWidth.toInt())
+
+    val textHeight = textLayout.height
+    val textY: Float = (bannerHeight - textHeight) / 2f
+    val savePoint = canvas.save()
+    canvas.translate(textLeft, textY + originalBitmap.height)
+    textLayout.draw(canvas)
+    canvas.restoreToCount(savePoint)
+
+    return destBitmap
+}
+
+fun getApnaIconRect(logoDrawable: Drawable, height: Int): Rect {
     val ratio = logoDrawable.intrinsicWidth / logoDrawable.intrinsicHeight
 
-    val expectedHeight = comboImage.height - (marginLogo * 2)
+    val margin = height / 4
+    val expectedHeight = height - 2 * margin
 
     val expectedWidth = expectedHeight * ratio
 
-    val rect = Rect(0, 0, expectedWidth, expectedHeight).apply {
-        offset(marginLogo, marginLogo)
+    return Rect(0, 0, expectedWidth, expectedHeight).apply {
+        offset(margin, margin)
     }
-
-    logoDrawable.bounds = rect
-
-    logoDrawable.draw(comboImage)
-
-    return b
 }
 
-fun addPlayStoreIcon(resources: Resources, bitmap: Bitmap): Bitmap? {
-    val scale = resources.displayMetrics.density
+fun getPlaystoreRect(playStoreBitmap: Drawable, height: Int, width: Int): Rect {
+    val expectedHeight = height / 1.8f
 
-    val playStoreDrawable: Drawable = resources.getDrawable(R.drawable.badge_copy)
-    val playStoreBitmap = playStoreDrawable.toBitmap()
+    val expectedWidth =
+        playStoreBitmap.intrinsicWidth * expectedHeight / playStoreBitmap.intrinsicHeight
 
-    val b = Bitmap.createBitmap(
-        bitmap.width,
-        bitmap.height,
-        bitmap.config
+    val marginLogo = height / 4f
+
+    return Rect(
+        (width - marginLogo - expectedWidth).toInt(),
+        marginLogo.toInt(),
+        (width - marginLogo).toInt(),
+        (marginLogo + expectedHeight).toInt()
     )
-    val comboImage = Canvas(b)
-
-    val height = bitmap.height / 1.8f
-    val width = playStoreBitmap.width * height / playStoreBitmap.height
-    val topImage = Bitmap.createScaledBitmap(playStoreBitmap, width.toInt(), height.toInt(), true)
-
-    comboImage.drawBitmap(bitmap, 0f, 0f, null)
-    val marginLogo = 8 * scale
-
-    val dest =
-        RectF(
-            bitmap.width - marginLogo - width,
-            bitmap.height / 4f,
-            bitmap.width - marginLogo,
-            bitmap.height / 4f + height
-        )
-//    dest.offset(-marginLogo, -marginLogo)
-
-    comboImage.drawBitmap(topImage, null, dest, null)
-    return b
 }
 
-fun drawTextToBitmap(context: Context, bitmap: Bitmap, text: String): Bitmap? {
-    return try {
-        val resources: Resources = context.resources
-        val scale: Float = resources.displayMetrics.density
-        val bitmapConfig = bitmap.config ?: Bitmap.Config.ARGB_8888
-
-        val textWidth: Int = bitmap.width - (250 * scale).toInt()
-
-        val copyBitmap = bitmap.copy(bitmapConfig, true)
-        val canvas = Canvas(copyBitmap)
-        val paint = TextPaint(Paint.ANTI_ALIAS_FLAG)
-        val plain = ResourcesCompat.getFont(context, R.font.firasans_bold) ?: return null
-        paint.color = Color.rgb(255, 255, 255)
-        paint.textSize = 12 * scale
-        paint.typeface = plain
-        val textLayout = StaticLayout(
-            text, paint, textWidth, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false
-        )
-
-        val textHeight = textLayout.height
-
-        val x: Float = (bitmap.width - textWidth) / 2f - 20 * scale
-        val y: Float = (bitmap.height - textHeight) / 2f
-
-        val savePoint = canvas.save()
-        canvas.translate(x, y)
-        textLayout.draw(canvas)
-        canvas.restoreToCount(savePoint)
-        copyBitmap
-    } catch (e: Exception) {
-        e.printStackTrace()
-        null
-    }
+fun drawTextToBitmap(context: Context, text: String, width: Int): StaticLayout {
+    val resources: Resources = context.resources
+    val scale: Float = resources.displayMetrics.density
+    val paint = TextPaint(Paint.ANTI_ALIAS_FLAG)
+    val plain = ResourcesCompat.getFont(context, R.font.firasans_bold)
+    paint.color = Color.rgb(255, 255, 255)
+    paint.textSize = 30 * scale
+    paint.typeface = plain
+    return StaticLayout(
+        text, paint, width, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false
+    )
 }

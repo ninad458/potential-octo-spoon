@@ -3,7 +3,8 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="#e3e3e3">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
@@ -25,6 +26,7 @@
             android:id="@+id/copy"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:background="#545454"
             android:layout_marginTop="20dp"
             app:layout_constraintTop_toBottomOf="@id/image" />
 
